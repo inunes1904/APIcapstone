@@ -1,4 +1,4 @@
-# APIcapstone
+# API capstone LittleLemon
 Capstone Project about API's
 
 Combine the skills and knowledge and use them to build an API for the Little Lemon restaurant. 

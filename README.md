@@ -10,6 +10,8 @@ I will need to create the back-end API that allows customers to browse food item
 Managers need to be able to update the item of the day and monitor orders and assign deliveries. 
 And the delivery crew should be able to check the orders assigned to them and update an order once it’s delivered.
 
+CheckList:
+
 1.	The admin can assign users to the manager group
 
 2.	You can access the manager group with an admin token

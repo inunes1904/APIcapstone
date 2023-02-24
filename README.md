@@ -22,7 +22,7 @@ CheckList:
 
 5.	Managers can log in 
 
-6.	Managers can update the item of the day
+6.	Managers can update the item of the day 
 
 7.	Managers can assign users to the delivery crew
 
@@ -36,9 +36,9 @@ CheckList:
 
 12.	Customers can log in using their username and password and get access tokens
 
-13.	Customers can browse all categories 
+13.	Customers can browse all categories - done √
 
-14.	Customers can browse all the menu items at once
+14.	Customers can browse all the menu items at once - done √
 
 15.	Customers can browse menu items by category
 

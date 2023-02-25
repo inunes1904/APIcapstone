@@ -1,4 +1,4 @@
-#!/Users/ivonunes/Desktop/projetos/APIcapstone/virtual/bin/python3.11
+#!/Users/ivonunes/Desktop/APIcapstone/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys

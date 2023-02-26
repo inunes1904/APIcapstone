@@ -88,6 +88,38 @@ class SingleManagerView(generics.RetrieveUpdateDestroyAPIView):
         return Response({'message': 'User removed from Manager group'},
                         status=status.HTTP_200_OK)
 
+class DeliveryCrewsView(generics.ListCreateAPIView):
+    queryset = User.objects.filter(groups__name='Delivery crew')
+    serializer_class = ManagerSerializer
+    permission_classes = [IsAuthenticated, IsManager | IsAdminUser]
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
+
+    def post(self, request, *args, **kwargs):
+        username = request.data['username']
+        if username:
+            user = get_object_or_404(User, username=username)
+            crew = User.objects.get(name='Delivery crew')
+            crew.user_set.add(user)
+            return Response({'message': 'User added to the Delivery Crew Group'},
+                            status= status.HTTP_201_CREATED)
+        return Response({'message': 'Something went wrong'},
+                         status.HTTP_400_BAD_REQUEST)
+
+class SingleDeliveryCrewsView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = User.objects.filter(groups__name='Delivery crew')
+    serializer_class = ManagerSerializer
+    permission_classes = [IsAuthenticated, IsManager | IsAdminUser]
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
+
+    def delete(self, request, *args, **kwargs):
+        pk = self.kwargs['pk']
+        user = get_object_or_404(User, pk=pk)
+        managers = Group.objects.get(name='Delivery crew')
+        managers.user_set.remove(user)
+        return Response({'message': 'User removed from the Delivery crew group'},
+                        status=status.HTTP_200_OK)
+
+
 
 @api_view()
 @permission_classes([IsAuthenticated])

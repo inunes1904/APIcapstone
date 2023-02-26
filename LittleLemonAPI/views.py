@@ -159,6 +159,7 @@ class CartView(generics.ListCreateAPIView):
             return Response({'message':'All items were removed' 
                              +'from your cart'}, status=status.HTTP_201_CREATED)
 
+#Order
 
 
 @api_view()

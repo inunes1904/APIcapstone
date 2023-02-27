@@ -1,8 +1,12 @@
+from datetime import date
+import math
+from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, render
 from django.contrib.auth.models import User, Group
-from LittleLemonAPI.models import Category, MenuItem, Cart
+from LittleLemonAPI.models import Category, MenuItem, Cart, Order, OrderItem
 from LittleLemonAPI.paginations import MenuItemsPagination
-from LittleLemonAPI.serializers import CartDeleteSerializer, CartSerializer, CategorySerializer, ManagerSerializer, MenuItemSerializer
+from LittleLemonAPI.serializers import (CartDeleteSerializer, CartSerializer, 
+CategorySerializer, ManagerSerializer, MenuItemSerializer, OrderSerializer)
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
@@ -159,8 +163,37 @@ class CartView(generics.ListCreateAPIView):
             return Response({'message':'All items were removed' 
                              +'from your cart'}, status=status.HTTP_201_CREATED)
 
-#Order
+class OrdersView(generics.ListCreateAPIView):
+    serializer_class = OrderSerializer
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
 
+    def get_queryset(self, *args, **kwargs):
+        if self.request.user.groups.filter(name='Managers').exists() or self.request.user.is_superuser == True:
+            query = Order.objects.all()
+        elif self.request.user.groups.filter(name='Delivery crew').exists():
+            query = Order.objects.filter(delivery_crew=self.request.user)
+        else:
+            query = Order.objects.filter(user = self.request.user)
+        return query
+    
+    def get_permissions(self):
+        if self.request.method == 'GET' or 'POST':
+            permission_classes = [IsAuthenticated]
+        else:
+            permission_classes = [IsAuthenticated, IsManager | IsAdminUser]
+        return [permission() for permission in permission_classes]
+    
+    def post(self, request, *args, **kwargs):
+        cart = Cart.objects.filter(user=request.user)
+        x = cart.values_list()
+        if len(x) == 0:
+            return HttpResponseBadRequest()
+        total = math.fsum([float(x[-1]) for x in x])
+        order = Order.objects.create(user=request.user, status=False, total=total,
+                                     date=date.today())
+        for i in cart.values():
+            menuitem = get_object_or_404(MenuItem, id=i['menuitem'])
+            orderitem = OrderItem.objects.create(order=order, menuitem=menuitem, )
 
 @api_view()
 @permission_classes([IsAuthenticated])

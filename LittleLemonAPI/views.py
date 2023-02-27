@@ -3,10 +3,11 @@ import math
 from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, render
 from django.contrib.auth.models import User, Group
-from LittleLemonAPI.models import Category, MenuItem, Cart, Order, OrderItem
+from LittleLemonAPI.models import Category, MenuItem, Cart, Order, OrderItem, Rating
 from LittleLemonAPI.paginations import MenuItemsPagination
-from LittleLemonAPI.serializers import (CartDeleteSerializer, CartSerializer, 
-CategorySerializer, ManagerSerializer, MenuItemSerializer, OrderSerializer)
+from LittleLemonAPI.serializers import (CartDeleteSerializer, CartSerializer, SingleOrderSerializer, 
+CategorySerializer, ManagerSerializer, MenuItemSerializer, OrderSerializer, RatingSerializer,
+EditOrderSerializer)
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
@@ -193,7 +194,65 @@ class OrdersView(generics.ListCreateAPIView):
                                      date=date.today())
         for i in cart.values():
             menuitem = get_object_or_404(MenuItem, id=i['menuitem'])
-            orderitem = OrderItem.objects.create(order=order, menuitem=menuitem, )
+            orderitem = OrderItem.objects.create(order=order, menuitem=menuitem, 
+                                                 quantity=i['quantity'])
+            orderitem.save()
+        cart.delete()
+        return Response({'message':'Your order has been placed! Your order number is '+ 
+                         f'{str(order.id)}'}, status=status.HTTP_201_CREATED)
+
+class SingleOrderView(generics.ListCreateAPIView):
+    serializer_class = SingleOrderSerializer
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
+
+    def get_permissions(self):
+        order = Order.objects.get(pk=self.kwargs['pk'])
+        if self.request.user == order.user and self.request.method == 'GET':
+            permission_classes = [IsAuthenticated]
+        elif self.request.method == 'PUT' or self.request.method == 'DELETE':
+            permission_classes = [IsAuthenticated, IsManager | IsAdminUser]
+        else:
+            permission_classes = [IsAuthenticated, IsDeliveryCrew | IsManager | IsAdminUser]
+        return [permission() for permission in permission_classes]
+    
+    def get_queryset(self):
+        query = OrderItem.objects.filter(order=self.kwargs['pk'])
+        return query
+    
+    def patch(self, request, *args, **kwargs):
+        order = Order.objects.get(pk=self.kwargs['pk'])
+        order.status = not order.status
+        order.save()
+        return Response({'message':'Status of order: '+str(order.id)+
+                         'changed to '+str(order.status)}, status= status.HTTP_200_OK)    
+
+    def put(self, request, *args, **kwargs):
+        serialized_item = EditOrderSerializer(data=request.data)
+        serialized_item.is_valid(raise_exception=True)
+        order_pk = self.kwargs['pk']
+        crew_pk = request.data['delivery_crew']
+        order = get_object_or_404(Order, pk=order_pk)
+        crew = get_object_or_404(User, pk=crew_pk)
+        order.delivery_crew = crew
+        order.save()
+        return Response({'message': str(crew.username)+' was assigned to'+
+                         'the order '+str(order.id)}, status=status.HTTP_201_CREATED)
+    
+    def delete(self, request, *args, **kwargs):
+        order = Order.objects.get(pk=self.kwargs['pk'])
+        order_number = str(order.id)
+        order.delete()
+        return Response({'message': f'Order {order_number} was removed'}, 
+                        statu=status.HTTP_200_OK)
+
+class RatingsView(generics.ListCreateAPIView):
+    queryset = Rating.objects.all()
+    serializer_class = RatingSerializer
+
+    def ger_permissions(self):
+        if self.request.method == 'GET':
+            return []
+        return [IsAuthenticated()]
 
 @api_view()
 @permission_classes([IsAuthenticated])

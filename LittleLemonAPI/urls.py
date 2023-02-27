@@ -16,5 +16,4 @@ urlpatterns = [
     path('ratings', views.RatingsView.as_view()),
     path('secret', views.secret),
     path('api-token-auth', obtain_auth_token),
- 
 ]

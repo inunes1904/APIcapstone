@@ -131,7 +131,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
 
     'DEFAULT_FILTER_BACKENDS': [
-        
         'rest_framework.filters.OrderingFilter',
         'rest_framework.filters.SearchFilter',
     ],
